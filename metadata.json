@@ -1,0 +1,8 @@
+{
+  "name": "DevHub - Partner & Developer Center",
+  "description": "A comprehensive developer portal for registration, management, authorization, and technical resources with AI-assisted review and APPCODE authentication.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}
