@@ -16,7 +16,8 @@ import {
   Lock,
   MessageSquareCode,
   Globe,
-  UserCheck
+  UserCheck,
+  LayoutGrid
 } from 'lucide-react';
 import Landing from './pages/Landing';
 import Registration from './pages/Registration';
@@ -28,8 +29,8 @@ import DeveloperConsole from './pages/DeveloperConsole';
 const Sidebar = () => {
   const location = useLocation();
   const menuItems = [
+    { icon: Globe, label: '开发者中心 (Home)', path: '/' },
     { icon: UserCheck, label: '开发者注册 (Registration)', path: '/registration' },
-    { icon: Users, label: '开发者管理 (Management)', path: '/management' },
     { icon: FileText, label: '系统帮助中心 (Help Center)', path: '/help' },
     { icon: Lock, label: '凭证中心 (Auth)', path: '/auth' },
   ];
