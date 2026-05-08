@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Puzzle, 
   Settings2, 
@@ -24,7 +24,16 @@ import { RegistrationStatus, Developer } from '../types';
 const DeveloperConsole: React.FC = () => {
   const { appCode } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('credentials');
+  
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['credentials', 'plugins', 'api', 'model'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
   const [chatQuery, setChatQuery] = useState('');
   const [chatHistory, setChatHistory] = useState<{role: string, content: string}[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);

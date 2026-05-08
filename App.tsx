@@ -23,16 +23,16 @@ import Landing from './pages/Landing';
 import Registration from './pages/Registration';
 import Management from './pages/Management';
 import Documentation from './pages/Documentation';
-import AuthGate from './pages/AuthGate';
+import DeveloperSpace from './pages/DeveloperSpace';
 import DeveloperConsole from './pages/DeveloperConsole';
 
 const Sidebar = () => {
   const location = useLocation();
   const menuItems = [
-    { icon: Globe, label: '开发者中心 (Home)', path: '/' },
-    { icon: UserCheck, label: '开发者注册 (Registration)', path: '/registration' },
-    { icon: FileText, label: '系统帮助中心 (Help Center)', path: '/help' },
-    { icon: Lock, label: '凭证中心 (Auth)', path: '/auth' },
+    { icon: Globe, label: '首页', path: '/' },
+    { icon: Lock, label: '开发者空间', path: '/auth' },
+    { icon: Users, label: '开发者管理', path: '/management' },
+    { icon: FileText, label: '帮助中心', path: '/help' },
   ];
 
   return (
@@ -108,7 +108,7 @@ const App: React.FC = () => {
               <Route path="/registration" element={<Registration />} />
               <Route path="/management" element={<Management />} />
               <Route path="/help" element={<Documentation />} />
-              <Route path="/auth" element={<AuthGate />} />
+              <Route path="/auth" element={<DeveloperSpace />} />
               <Route path="/console/:appCode" element={<DeveloperConsole />} />
             </Routes>
           </div>
