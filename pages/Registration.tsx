@@ -17,7 +17,16 @@ import {
   Box, 
   Sliders, 
   Clock,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Trash2,
+  User,
+  Briefcase,
+  Building,
+  Cpu,
+  Globe,
+  Upload,
+  Camera
 } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
 
@@ -34,16 +43,47 @@ const Registration: React.FC = () => {
     name: '',
     email: '',
     phone: '',
+    devType: 'individual', // individual, enterprise, vendor
+    idType: 'id_card', // id_card, business_license
+    idNumber: '',
     company: '',
     companyWebsite: '',
-    companySize: '1-50',
-    industry: '',
+    softwareList: [{ name: '', version: '' }],
+    identityLogo: '' as string,
     purpose: '',
-    githubUrl: '',
-    region: '华东 (上海)',
-    expectedMonthlyRequests: '< 10k',
     passcode: '',
+    usePlatformPasscode: true,
   });
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm({ ...form, identityLogo: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const addSoftware = () => {
+    setForm({
+      ...form,
+      softwareList: [...form.softwareList, { name: '', version: '' }]
+    });
+  };
+
+  const updateSoftware = (index: number, field: 'name' | 'version', value: string) => {
+    const newList = [...form.softwareList];
+    newList[index][field] = value;
+    setForm({ ...form, softwareList: newList });
+  };
+
+  const removeSoftware = (index: number) => {
+    if (form.softwareList.length <= 1) return;
+    const newList = form.softwareList.filter((_, i) => i !== index);
+    setForm({ ...form, softwareList: newList });
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [reviewResult, setReviewResult] = useState<any>(null);
@@ -334,12 +374,24 @@ const Registration: React.FC = () => {
 
         {step === 2 && (
           <form onSubmit={handleSubmit} className="p-10 space-y-10">
-            {/* Section 1: Basic & Enterprise */}
+            {/* Section 1: Developer Identity */}
             <div className="space-y-6">
               <div className="flex items-center gap-3 border-l-4 border-blue-500 pl-4">
-                <h3 className="text-lg font-bold text-slate-800">基本信息与企业背景</h3>
+                <h3 className="text-lg font-bold text-slate-800">开发者身份信息</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <InputLabel label="开发者类型" required />
+                  <select 
+                    value={form.devType}
+                    onChange={e => setForm({...form, devType: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+                  >
+                    <option value="individual">个人开发者</option>
+                    <option value="enterprise">三方企业</option>
+                    <option value="vendor">原厂软件厂商</option>
+                  </select>
+                </div>
                 <div className="space-y-1">
                   <InputLabel label="姓名 / 负责人" required />
                   <input 
@@ -351,50 +403,40 @@ const Registration: React.FC = () => {
                     placeholder="请输入负责人真实姓名"
                   />
                 </div>
+                {form.devType !== 'individual' && (
+                  <div className="md:col-span-2 space-y-1">
+                    <InputLabel label="公司/机构全称" required />
+                    <input 
+                      required
+                      type="text" 
+                      value={form.company}
+                      onChange={e => setForm({...form, company: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-300"
+                      placeholder="请输入与企业执照一致的名称"
+                    />
+                  </div>
+                )}
                 <div className="space-y-1">
-                  <InputLabel label="企业全称" required />
+                  <InputLabel label="证件类型" required />
+                  <select 
+                    value={form.idType}
+                    onChange={e => setForm({...form, idType: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+                  >
+                    <option value="id_card">身份证 (个人/三方持有)</option>
+                    <option value="business_license">统一社会信用代码 (企业)</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <InputLabel label="证件号码" required />
                   <input 
                     required
                     type="text" 
-                    value={form.company}
-                    onChange={e => setForm({...form, company: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-300"
-                    placeholder="请输入与企业执照一致的名称"
+                    value={form.idNumber}
+                    onChange={e => setForm({...form, idNumber: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono"
+                    placeholder="请输入有效的证件号码"
                   />
-                </div>
-                <div className="space-y-1">
-                  <InputLabel label="企业官网" />
-                  <input 
-                    type="url" 
-                    value={form.companyWebsite}
-                    onChange={e => setForm({...form, companyWebsite: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-300"
-                    placeholder="https://www.example.com"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <InputLabel label="行业领域" />
-                  <input 
-                    type="text" 
-                    value={form.industry}
-                    onChange={e => setForm({...form, industry: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-300"
-                    placeholder="例如：金融科技、电子商务、人工智能"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <InputLabel label="公司规模" />
-                  <select 
-                    value={form.companySize}
-                    onChange={e => setForm({...form, companySize: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
-                  >
-                    <option value="1-20">1-20 人</option>
-                    <option value="21-50">21-50 人</option>
-                    <option value="51-200">51-200 人</option>
-                    <option value="201-500">201-500 人</option>
-                    <option value="500+">500+ 人以上</option>
-                  </select>
                 </div>
               </div>
             </div>
@@ -424,81 +466,145 @@ const Registration: React.FC = () => {
                     value={form.phone}
                     onChange={e => setForm({...form, phone: e.target.value})}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    placeholder="请输入手机号码或座机"
+                    placeholder="请输入手机号码"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Section 3: Technical & Business */}
+            {/* Section 3: Software & Version */}
             <div className="space-y-6">
-              <div className="flex items-center gap-3 border-l-4 border-amber-500 pl-4">
-                <h3 className="text-lg font-bold text-slate-800">技术背景与业务场景</h3>
+              <div className="flex items-center justify-between border-l-4 border-amber-500 pl-4">
+                <h3 className="text-lg font-bold text-slate-800">适配软件信息</h3>
+                <button 
+                  type="button"
+                  onClick={addSoftware}
+                  className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline"
+                >
+                  <Plus size={14} /> 添加软件
+                </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <InputLabel label="GitHub / 开源主页" />
-                  <input 
-                    type="url" 
-                    value={form.githubUrl}
-                    onChange={e => setForm({...form, githubUrl: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    placeholder="https://github.com/username"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <InputLabel label="首选部署区域" required />
-                  <select 
-                    value={form.region}
-                    onChange={e => setForm({...form, region: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
-                  >
-                    <option value="华东 (上海)">华东 (上海)</option>
-                    <option value="华南 (深圳)">华南 (深圳)</option>
-                    <option value="华北 (北京)">华北 (北京)</option>
-                    <option value="西南 (成都)">西南 (成都)</option>
-                    <option value="海外 (新加坡)">海外 (新加坡)</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <InputLabel label="预期月调用量" />
-                  <select 
-                    value={form.expectedMonthlyRequests}
-                    onChange={e => setForm({...form, expectedMonthlyRequests: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
-                  >
-                    <option value="< 10k">小于 10,000 次</option>
-                    <option value="10k-100k">10,000 - 100,000 次</option>
-                    <option value="100k-1M">100,000 - 1,000,000 次</option>
-                    <option value="> 1M">1,000,000 次以上</option>
-                  </select>
-                </div>
-                <div className="md:col-span-2 space-y-1">
-                  <InputLabel label="凭证查看口令 (查看 AppKey 必填)" required />
-                  <div className="relative">
-                    <input 
-                      required
-                      type="password" 
-                      value={form.passcode}
-                      onChange={e => setForm({...form, passcode: e.target.value})}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-300"
-                      placeholder="请设置 6 位以上数字或字母组合"
-                    />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
-                      <Lock size={18} />
+              <div className="space-y-4">
+                {form.softwareList.map((sw, idx) => (
+                  <div key={idx} className="flex gap-4 items-end bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="flex-1 space-y-1">
+                      <InputLabel label="软件名称" required />
+                      <input 
+                        required
+                        type="text" 
+                        value={sw.name}
+                        onChange={e => updateSoftware(idx, 'name', e.target.value)}
+                        className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        placeholder="例如：微信、企业微信"
+                      />
+                    </div>
+                    <div className="w-32 space-y-1">
+                      <InputLabel label="主版本号" required />
+                      <input 
+                        required
+                        type="text" 
+                        value={sw.version}
+                        onChange={e => updateSoftware(idx, 'version', e.target.value)}
+                        className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        placeholder="v1.0"
+                      />
+                    </div>
+                    {form.softwareList.length > 1 && (
+                      <button 
+                        type="button"
+                        onClick={() => removeSoftware(idx)}
+                        className="p-2.5 text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Section 4: Settings & Security */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-l-4 border-indigo-500 pl-4">
+                <h3 className="text-lg font-bold text-slate-800">其它配置</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="md:col-span-2 space-y-3">
+                  <InputLabel label="身份图标 (个人照片 / 企业 LOGO)" required />
+                  <div className="flex items-center gap-6">
+                    <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden relative group">
+                      {form.identityLogo ? (
+                        <>
+                          <img src={form.identityLogo} alt="Logo" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <Upload size={20} className="text-white" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center p-2">
+                          <Camera size={24} className="mx-auto text-slate-300" />
+                        </div>
+                      )}
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-xs text-slate-500 leading-relaxed uppercase font-bold tracking-wider">上传要求</p>
+                      <p className="text-[10px] text-slate-400">支持 JPG, PNG 格式，建议尺寸 200x200px。此图标将展示在您的开发者空间及对接文档中。</p>
+                      <button type="button" className="text-[10px] font-bold text-blue-600 hover:underline">查看示例</button>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">审核通过后，需输入此口令才能查看 AppKey 和敏感开发参数。</p>
+                </div>
+
+                <div className="md:col-span-2 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <InputLabel label="凭证查看口令" required />
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        checked={form.usePlatformPasscode}
+                        onChange={e => setForm({...form, usePlatformPasscode: e.target.checked})}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-[10px] font-bold text-slate-500 group-hover:text-blue-600 transition-colors uppercase tracking-widest">使用平台登录密码</span>
+                    </label>
+                  </div>
+                  
+                  {!form.usePlatformPasscode ? (
+                    <div className="relative animate-in slide-in-from-top-2 duration-300">
+                      <input 
+                        required
+                        type="password" 
+                        value={form.passcode}
+                        onChange={e => setForm({...form, passcode: e.target.value})}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-300"
+                        placeholder="设置用于在空间内解密查看密钥的安全口令"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        <Lock size={18} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3">
+                      <ShieldCheck size={18} className="text-blue-600" />
+                      <p className="text-xs text-blue-600 font-medium">已选择同步平台账号密码，登录后即可自动解密查看凭证。</p>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-slate-400">为了保障 AppKey 安全，查看敏感开发参数需进行二次口令确认。</p>
                 </div>
                 <div className="md:col-span-2 space-y-1">
-                  <InputLabel label="合作目的与场景需求" required />
+                  <InputLabel label="业务场景描述" required />
                   <textarea 
                     required
                     rows={4}
                     value={form.purpose}
                     onChange={e => setForm({...form, purpose: e.target.value})}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    placeholder="请详细描述您的业务痛点以及希望通过我们的 API 解决的问题。更详细的描述有助于通过 AI 的初次审核。"
+                    placeholder="描述您的软件主要业务场景及希望接入平带来的价值..."
                   />
                 </div>
               </div>
