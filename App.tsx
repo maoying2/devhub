@@ -29,7 +29,7 @@ import DeveloperConsole from './pages/DeveloperConsole';
 const Sidebar = () => {
   const location = useLocation();
   const menuItems = [
-    { icon: Globe, label: '首页', path: '/' },
+    { icon: Globe, label: '开发者指南', path: '/' },
     { icon: Lock, label: '开发者空间', path: '/auth' },
     { icon: Users, label: '开发者管理', path: '/management' },
     { icon: FileText, label: '帮助中心', path: '/help' },
