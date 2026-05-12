@@ -26,21 +26,51 @@ import {
 
 const DeveloperSpace: React.FC = () => {
   const [appCode, setAppCode] = useState('DC-8848-X');
-  const [passcode, setPasscode] = useState('••••••');
+  const [passcode, setPasscode] = useState('123456');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [viewMode, setViewMode] = useState<'login' | 'findAppCode' | 'resetPassword' | 'checkStatus'>('login');
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [checkIdNumber, setCheckIdNumber] = useState('');
   const [recoverySuccess, setRecoverySuccess] = useState('');
   
   const navigate = useNavigate();
 
   const VALID_PAIRS = [
-    { code: 'DC-8848-X', pass: '123456', email: 'dev1@example.com', name: '智诚软件负责人', company: '智诚软件有限公司' },
-    { code: 'DC-1024-Y', pass: '123456', email: 'dev2@example.com', name: '极客通讯开发部', company: '极客通讯科技有限公司' },
-    { code: 'TEST', pass: 'TEST', email: 'test@example.com', name: '测试开发者', company: '测试企业' }
+    { code: 'DC-8848-X', pass: '123456', email: 'dev1@example.com', name: '智诚软件负责人', company: '智诚软件有限公司', status: 'approved' },
+    { code: 'DC-1024-Y', pass: '123456', email: 'dev2@example.com', name: '极客通讯开发部', company: '极客通讯科技有限公司', status: 'approved' },
+    { code: 'TEST', pass: 'TEST', email: 'test@example.com', name: '测试开发者', company: '测试企业', status: 'approved' },
+    { code: 'DC-9999-Z', pass: '123456', email: 'fisherilvens405@gmail.com', name: '当前用户', company: '智联创新', status: 'approved' }
+  ];
+
+  // Mock registrations history for the current session user
+  const CURRENT_USER_EMAIL = 'fisherilvens405@gmail.com';
+  const REGISTRATION_HISTORY = [
+    { 
+      email: 'fisherilvens405@gmail.com', 
+      status: 'rejected', 
+      date: '2024-05-01', 
+      type: '个人开发',
+      reason: '实名认证照片不符合要求（需手持证件照），请重新上传。' 
+    },
+    { 
+      email: 'fisherilvens405@gmail.com', 
+      status: 'approved', 
+      date: '2024-05-10', 
+      type: '三方企业',
+      code: 'DC-9999-Z'
+    }
   ];
 
   const currentUserData = VALID_PAIRS.find(p => p.code === appCode) || VALID_PAIRS[0];
+
+  const handleCheckStatus = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+  };
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +78,45 @@ const DeveloperSpace: React.FC = () => {
     setError('');
 
     setTimeout(() => {
-      setIsAuthenticated(true);
-      setIsLoading(false);
+      const match = VALID_PAIRS.find(p => p.code === appCode && p.pass === passcode);
+      if (match || (appCode === 'DC-8848-X' && passcode === '123456')) {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+      } else {
+        setError('无效的 APPCODE 或密码，请检查输入或联系管理员。');
+        setIsLoading(false);
+      }
     }, 800);
+  };
+
+  const handleFindAppCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    setTimeout(() => {
+      const match = VALID_PAIRS.find(p => p.pass === passcode);
+      if (match) {
+        setRecoverySuccess(`身份验证成功！您的 APPCODE 为: ${match.code}`);
+      } else {
+        setError('未找到匹配该密码的开发者凭证。');
+      }
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  const handleResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    setTimeout(() => {
+      const match = VALID_PAIRS.find(p => p.code === appCode && p.email === recoveryEmail);
+      if (match) {
+        setRecoverySuccess(`重置链接已发送至: ${recoveryEmail}，请检查邮件。`);
+      } else {
+        setError('APPCODE 与注册邮箱不匹配，请确保输入正确的信息。');
+      }
+      setIsLoading(false);
+    }, 1000);
   };
 
   const secureLinks = [
@@ -203,49 +269,242 @@ const DeveloperSpace: React.FC = () => {
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">开发者工作空间</h1>
             <p className="text-slate-400 text-xs max-w-xs mx-auto">
-              空间密码已与平台账号同步，点击下方按钮安全进入。
+              {viewMode === 'login' && '请输入 APPCODE 与查验密码进入安全空间。'}
+              {viewMode === 'findAppCode' && '请输入您的查验密码以找回 APPCODE。'}
+              {viewMode === 'resetPassword' && '请输入 APPCODE 与注册邮箱重置密码。'}
+              {viewMode === 'checkStatus' && '输入注册时的邮箱与证件号查询申请进度。'}
             </p>
           </div>
         </div>
 
         <div className="p-10 space-y-8">
-          <form onSubmit={handleVerify} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">APPCODE</label>
-              <div className="relative">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                <input 
-                  required
-                  type="text" 
-                  value={appCode}
-                  onChange={e => setAppCode(e.target.value.toUpperCase())}
-                  placeholder="DC-XXXX-X"
-                  className="w-full pl-12 pr-6 py-3 rounded-2xl border-2 border-slate-50 focus:border-blue-500 focus:ring-0 outline-none text-sm font-mono text-slate-800 transition-all bg-slate-50/50"
-                />
+          {viewMode === 'login' ? (
+            <form onSubmit={handleVerify} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">APPCODE</label>
+                <div className="relative">
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input 
+                    required
+                    type="text" 
+                    value={appCode}
+                    onChange={e => setAppCode(e.target.value.toUpperCase())}
+                    placeholder="DC-XXXX-X"
+                    className="w-full pl-12 pr-6 py-3 rounded-2xl border-2 border-slate-50 focus:border-blue-500 focus:ring-0 outline-none text-sm font-mono text-slate-800 transition-all bg-slate-50/50"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">查验密码 (已同步平台)</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                <input 
-                  required
-                  readOnly
-                  type="password" 
-                  value={passcode}
-                  className="w-full pl-12 pr-6 py-3 rounded-2xl border-2 border-slate-50 outline-none text-sm font-mono text-slate-400 bg-slate-50/50 cursor-not-allowed"
-                />
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">查验密码</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input 
+                    required
+                    type="password" 
+                    value={passcode}
+                    onChange={e => setPasscode(e.target.value)}
+                    placeholder="••••••"
+                    className="w-full pl-12 pr-6 py-3 rounded-2xl border-2 border-slate-50 focus:border-blue-500 focus:ring-0 outline-none text-sm font-mono text-slate-800 transition-all bg-slate-50/50"
+                  />
+                </div>
               </div>
-            </div>
 
-            <button 
-              disabled={isLoading}
-              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-100 disabled:opacity-50"
-            >
-              {isLoading ? '正在认证...' : <><Lock size={16} /> 安全登录空间</>}
-            </button>
-          </form>
+              {error && (
+                <div className="flex items-center gap-3 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 animate-in shake-in">
+                  <AlertCircle size={16} />
+                  <p className="text-[10px] font-bold">{error}</p>
+                </div>
+              )}
+
+              <button 
+                disabled={isLoading}
+                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-100 disabled:opacity-50"
+              >
+                {isLoading ? '正在认证...' : <><Lock size={16} /> 安全登录空间</>}
+              </button>
+
+              <div className="flex flex-col gap-2 pt-2">
+                 <div className="flex items-center justify-between">
+                    <button type="button" onClick={() => { setViewMode('findAppCode'); setError(''); setRecoverySuccess(''); }} className="text-[10px] font-bold text-slate-400 hover:text-blue-600 transition-colors">找回 APPCODE</button>
+                    <button type="button" onClick={() => { setViewMode('resetPassword'); setError(''); setRecoverySuccess(''); }} className="text-[10px] font-bold text-slate-400 hover:text-blue-600 transition-colors">重置密码</button>
+                 </div>
+                 <button type="button" onClick={() => { setViewMode('checkStatus'); setError(''); setRecoverySuccess(''); }} className="w-full mt-2 py-2.5 border-2 border-slate-50 rounded-xl text-[10px] font-bold text-slate-500 hover:bg-slate-50 hover:text-blue-600 transition-all text-center">尚未通过审核？查询申请进度</button>
+              </div>
+            </form>
+          ) : viewMode === 'findAppCode' ? (
+// ... existing findAppCode form ...
+            <form onSubmit={handleFindAppCode} className="space-y-6">
+               <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">验证密码</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input 
+                    required
+                    type="password" 
+                    value={passcode}
+                    onChange={e => setPasscode(e.target.value)}
+                    placeholder="请输入您的查验密码"
+                    className="w-full pl-12 pr-6 py-3 rounded-2xl border-2 border-slate-50 focus:border-blue-500 focus:ring-0 outline-none text-sm font-mono text-slate-800 transition-all bg-slate-50/50"
+                  />
+                </div>
+              </div>
+
+              {error && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-[10px] font-bold">{error}</div>}
+              {recoverySuccess && <div className="p-4 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-100 leading-relaxed">{recoverySuccess}</div>}
+
+              <div className="flex flex-col gap-3">
+                <button 
+                  disabled={isLoading}
+                  className="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                >
+                  {isLoading ? '查询中...' : '立即通过密码找回 APPCODE'}
+                </button>
+                <button type="button" onClick={() => { setViewMode('login'); setError(''); setRecoverySuccess(''); }} className="text-xs font-bold text-slate-400 hover:text-slate-600 py-2">返回登录</button>
+              </div>
+            </form>
+          ) : viewMode === 'checkStatus' ? (
+            <div className="space-y-6">
+               <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 mb-2">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm">
+                       <Mail size={18} />
+                    </div>
+                    <div>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">当前关联账户</p>
+                       <p className="text-xs font-bold text-slate-700">{CURRENT_USER_EMAIL}</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-relaxed">
+                    系统已自动识别您的登录身份。以下是您在该账户下发起的所有开发者申请记录：
+                  </p>
+               </div>
+
+               <div className="space-y-4">
+                 {REGISTRATION_HISTORY.length > 0 ? (
+                   REGISTRATION_HISTORY.map((item, idx) => (
+                    <div key={idx} className="relative pl-10 pb-6 last:pb-0 group">
+                       {/* Timeline Line */}
+                       <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-100 group-last:bottom-auto group-last:h-4"></div>
+                       {/* Timeline Node */}
+                       <div className={`absolute left-2 top-0 w-4.5 h-4.5 rounded-full border-4 border-white shadow-sm z-10 transition-transform group-hover:scale-125 ${
+                         item.status === 'approved' ? 'bg-emerald-500 shadow-emerald-200' : 
+                         item.status === 'rejected' ? 'bg-red-500 shadow-red-200' : 'bg-amber-500 shadow-amber-200'
+                       }`}></div>
+
+                       <div className="bg-white border-2 border-slate-50 rounded-2xl p-4 shadow-sm group-hover:border-blue-100 transition-all">
+                          <div className="flex justify-between items-start mb-2">
+                             <div>
+                                <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md uppercase mr-2">{item.type}</span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase ${
+                                  item.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 
+                                  item.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
+                                }`}>
+                                  {item.status === 'approved' ? '已通过' : item.status === 'rejected' ? '已驳回' : '审核中'}
+                                </span>
+                             </div>
+                             <span className="text-[10px] font-mono text-slate-400">{item.date}</span>
+                          </div>
+                          
+                          {item.status === 'approved' && (
+                             <div className="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl space-y-2">
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[10px] text-emerald-700 font-bold">分配 APPCODE</span>
+                                   <span className="text-xs font-mono font-bold text-emerald-800 tracking-wider bg-white px-2 py-0.5 rounded shadow-sm">{item.code}</span>
+                                </div>
+                                <p className="text-[10px] text-emerald-600/80">恭喜！您的申请已通过，请使用该代码及注册口令登录空间。</p>
+                             </div>
+                          )}
+
+                          {item.status === 'rejected' && (
+                             <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-xl">
+                                <p className="text-[10px] font-bold text-red-700 mb-1">驳回原因：</p>
+                                <p className="text-[10px] text-red-600 leading-relaxed italic">{item.reason}</p>
+                                <button 
+                                  onClick={() => navigate('/registration')}
+                                  className="mt-2 text-[10px] font-bold text-red-700 flex items-center gap-1 hover:underline"
+                                >
+                                  <PenTool size={10} /> 立即重新申请
+                                </button>
+                             </div>
+                          )}
+
+                          {item.status === 'pending' && (
+                             <p className="mt-2 text-[10px] text-slate-500 leading-relaxed">您的申请正在由 AI 及人工团队进行双重评估，请耐心等待 1-3 个工作日。</p>
+                          )}
+                       </div>
+                    </div>
+                   ))
+                 ) : (
+                   <div className="text-center py-10">
+                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                         <Search size={24} className="text-slate-200" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-400">未发现该账户的申请记录</p>
+                      <button 
+                        onClick={() => navigate('/registration')}
+                        className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                      >
+                        立即发起首次申请
+                      </button>
+                   </div>
+                 )}
+               </div>
+
+               <div className="pt-4 border-t border-slate-100">
+                 <button 
+                   type="button" 
+                   onClick={() => { setViewMode('login'); setError(''); setRecoverySuccess(''); }} 
+                   className="w-full py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                 >
+                   返回登录空间
+                 </button>
+               </div>
+            </div>
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">APPCODE</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={appCode}
+                    onChange={e => setAppCode(e.target.value.toUpperCase())}
+                    placeholder="DC-XXXX-X"
+                    className="w-full px-5 py-3 rounded-2xl border-2 border-slate-50 focus:border-blue-500 outline-none text-sm font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">注册邮箱</label>
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                    <input 
+                      required
+                      type="email" 
+                      value={recoveryEmail}
+                      onChange={e => setRecoveryEmail(e.target.value)}
+                      placeholder="example@email.com"
+                      className="w-full pl-12 pr-6 py-3 rounded-2xl border-2 border-slate-50 focus:border-blue-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {error && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-[10px] font-bold">{error}</div>}
+              {recoverySuccess && <div className="p-4 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-100 leading-relaxed">{recoverySuccess}</div>}
+
+              <div className="flex flex-col gap-3">
+                <button 
+                  disabled={isLoading}
+                  className="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                >
+                  {isLoading ? '正在重置...' : '发送密码重置邮件'}
+                </button>
+                <button type="button" onClick={() => { setViewMode('login'); setError(''); setRecoverySuccess(''); }} className="text-xs font-bold text-slate-400 hover:text-slate-600 py-2">返回登录</button>
+              </div>
+            </form>
+          )}
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-start gap-3 mt-4">
              <div className="bg-white p-2 rounded-lg shadow-sm">
