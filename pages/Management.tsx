@@ -69,6 +69,8 @@ const Management: React.FC = () => {
     status: RegistrationStatus.APPROVED,
     comment: '',
     expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    appCode: '',
+    isAutoAppCode: true,
     permissions: {
       interfaceExchange: true,
       desktopAdaptation: false,
@@ -83,6 +85,8 @@ const Management: React.FC = () => {
       status: RegistrationStatus.APPROVED,
       comment: '',
       expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      appCode: '',
+      isAutoAppCode: true,
       permissions: { ...dev.permissions }
     });
     setIsAuthModalOpen(true);
@@ -92,12 +96,17 @@ const Management: React.FC = () => {
     if (!selectedDev) return;
     
     const isApproved = auditForm.status === RegistrationStatus.APPROVED;
+    const finalAppCode = isApproved 
+      ? (auditForm.isAutoAppCode 
+          ? `DC-${Math.floor(1000 + Math.random() * 9000)}-Z` 
+          : (auditForm.appCode || `DC-${Math.floor(1000 + Math.random() * 9000)}-Z`))
+      : undefined;
     
     // Simulate generation of keys if approved
     const updated: Developer = {
       ...selectedDev,
       status: auditForm.status,
-      appCode: isApproved ? `DC-${Math.floor(1000 + Math.random() * 9000)}-Z` : undefined,
+      appCode: finalAppCode,
       appKey: isApproved ? `ak_prod_${Math.random().toString(36).substr(2, 12)}` : undefined,
       expiryDate: isApproved ? auditForm.expiryDate : undefined,
       permissions: { ...auditForm.permissions },
@@ -252,16 +261,42 @@ const Management: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                <p className="text-sm font-bold text-slate-700">步骤 1: 配置有效期与意见</p>
+                <p className="text-sm font-bold text-slate-700">步骤 1: 配置有效期与 APPCODE</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs text-slate-500">有效期至</label>
                     <input type="date" value={auditForm.expiryDate} onChange={e => setAuditForm({...auditForm, expiryDate: e.target.value})} className="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs text-slate-500">审核意见 (文本描述)</label>
-                    <input type="text" placeholder="请输入审核评估意见..." value={auditForm.comment} onChange={e => setAuditForm({...auditForm, comment: e.target.value})} className="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-slate-500">APPCODE 设置</label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={auditForm.isAutoAppCode} 
+                          onChange={e => setAuditForm({...auditForm, isAutoAppCode: e.target.checked})}
+                          className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">自动生成</span>
+                      </label>
+                    </div>
+                    <input 
+                      type="text" 
+                      disabled={auditForm.isAutoAppCode}
+                      placeholder={auditForm.isAutoAppCode ? "自动生成中..." : "手动输入 APPCODE"} 
+                      value={auditForm.appCode} 
+                      onChange={e => setAuditForm({...auditForm, appCode: e.target.value.toUpperCase()})} 
+                      className={`w-full px-4 py-2 text-sm border font-mono rounded-xl outline-none transition-all ${
+                        auditForm.isAutoAppCode 
+                        ? 'bg-slate-100 border-transparent text-slate-400 cursor-not-allowed' 
+                        : 'bg-white border-slate-200 focus:ring-2 focus:ring-blue-500'
+                      }`} 
+                    />
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-500">审核意见 (文本描述)</label>
+                  <input type="text" placeholder="请输入审核评估意见..." value={auditForm.comment} onChange={e => setAuditForm({...auditForm, comment: e.target.value})} className="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
 

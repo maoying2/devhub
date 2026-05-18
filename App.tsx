@@ -15,6 +15,7 @@ import {
   Code2,
   Lock,
   MessageSquareCode,
+  MessageSquare,
   Globe,
   UserCheck,
   LayoutGrid
@@ -25,6 +26,8 @@ import Management from './pages/Management';
 import Documentation from './pages/Documentation';
 import DeveloperSpace from './pages/DeveloperSpace';
 import DeveloperConsole from './pages/DeveloperConsole';
+import Tickets from './pages/Tickets';
+import AdminTickets from './pages/AdminTickets';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -33,6 +36,8 @@ const Sidebar = () => {
     { icon: Lock, label: '开发者空间', path: '/auth' },
     { icon: Users, label: '开发者管理', path: '/management' },
     { icon: FileText, label: '帮助中心', path: '/help' },
+    { icon: MessageSquare, label: '我的工单', path: '/tickets' },
+    { icon: ShieldCheck, label: '工单处理 (后台)', path: '/admin/tickets' },
   ];
 
   return (
@@ -109,6 +114,8 @@ const App: React.FC = () => {
               <Route path="/management" element={<Management />} />
               <Route path="/help" element={<Documentation />} />
               <Route path="/auth" element={<DeveloperSpace />} />
+              <Route path="/tickets" element={<Tickets />} />
+              <Route path="/admin/tickets" element={<AdminTickets />} />
               <Route path="/console/:appCode" element={<DeveloperConsole />} />
             </Routes>
           </div>
